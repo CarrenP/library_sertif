@@ -3,43 +3,33 @@ using System.Windows.Forms;
 
 namespace library_sertif.forms
 {
-    public partial class UserMenuForm : Form
+    public partial class UserMenuForm : BaseMenuForm
     {
-        private int _userId;
         private string _userName;
 
-        public UserMenuForm(int userId, string userName)
+        public UserMenuForm(int userId, string userName = "Member") : base(userId)
         {
-            InitializeComponent(); 
-            _userId = userId;
+            InitializeComponent();
+
             _userName = userName;
 
             if (lblWelcome != null)
             {
                 lblWelcome.Text = $"Welcome, {_userName}";
             }
-        }
 
-        public UserMenuForm(int userId)
-        {
-            InitializeComponent();   
-            _userId = userId;
-
-            if (lblWelcome != null)
-            {
-                lblWelcome.Text = "Welcome, Member";
-            }
+            this.Text = ShowMenuInfo();
         }
 
         private void btnCatalog_Click(object sender, EventArgs e)
         {
-            new booklist(_userId).Show();
+            new booklist(UserId).Show();
             this.Hide();
         }
 
         private void btnMyLoans_Click(object sender, EventArgs e)
         {
-            new loanlist(_userId).Show();
+            new loanlist(UserId).Show();
             this.Hide();
         }
 
@@ -57,6 +47,10 @@ namespace library_sertif.forms
                 new home().Show();
                 this.Close();
             }
+            new UserMenuForm(Session.UserId, Session.MemberId).Show();
+            this.Hide();
+
         }
+
     }
 }

@@ -24,11 +24,13 @@ namespace library_sertif.forms
 
                 string query = @"
                     SELECT 
-                        u.member_id,
+                         u.member_id,
                         u.name,
                         b.title,
                         l.loan_date,
-                        l.due_date
+                        l.due_date,
+                        l.is_returned,
+                        l.returned_date
                     FROM loans l
                     JOIN users u ON l.user_id = u.id
                     JOIN books b ON l.book_id = b.id
@@ -46,12 +48,23 @@ namespace library_sertif.forms
 
                 while (reader.Read())
                 {
-                    DateTime dueDate = reader.GetDateTime("due_date");
-                    int daysLeft = (dueDate.Date - DateTime.Now.Date).Days;
+                    bool isReturned = Convert.ToInt32(reader["is_returned"]) == 1;
 
-                    string status = daysLeft >= 0
-                        ? $"Remaining {daysLeft} days"
-                        : $"Overdue by {Math.Abs(daysLeft)} days";
+                    string status;
+
+                    if (isReturned)
+                    {
+                        status = "Returned";
+                    }
+                    else
+                    {
+                        DateTime dueDate = reader.GetDateTime("due_date");
+                        int daysLeft = (dueDate.Date - DateTime.Now.Date).Days;
+
+                        status = daysLeft >= 0
+                            ? $"Remaining {daysLeft} days"
+                            : $"Overdue by {Math.Abs(daysLeft)} days";
+                    }
 
                     table.Rows.Add(
                         reader["member_id"],
@@ -61,6 +74,7 @@ namespace library_sertif.forms
                         status
                     );
                 }
+
 
                 dgvBorrowed.DataSource = table;
             }
@@ -72,9 +86,7 @@ namespace library_sertif.forms
         {
             foreach (DataGridViewRow row in dgvBorrowed.Rows)
             {
-                
                 if (row.IsNewRow) continue;
-
                 if (row.Cells["Status"].Value == null) continue;
 
                 string status = row.Cells["Status"].Value.ToString();
@@ -84,6 +96,12 @@ namespace library_sertif.forms
                     row.Cells["Status"].Style.ForeColor = Color.Red;
                     row.Cells["Status"].Style.Font =
                         new Font(dgvBorrowed.Font, FontStyle.Bold);
+                }
+                else if (status == "Returned")
+                {
+                    row.Cells["Status"].Style.ForeColor = Color.Green;
+                    row.Cells["Status"].Style.Font =
+                        new Font(dgvBorrowed.Font, FontStyle.Italic);
                 }
             }
 
