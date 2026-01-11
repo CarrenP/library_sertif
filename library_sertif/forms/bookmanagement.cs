@@ -12,30 +12,37 @@ namespace library_sertif.forms
         {
             InitializeComponent();
             this.Text = "Admin - Manage Books";
-            LoadBooks();
+            LoadBooks(); // load data buku saat form dibuka
         }
 
         private void LoadBooks()
         {
+            // ambil dan tampilkan data buku dari database
             using (MySqlConnection conn = Database.GetConnection())
             {
                 conn.Open();
+
                 string query = "SELECT id, title, author, stock FROM books";
                 MySqlDataAdapter da = new MySqlDataAdapter(query, conn);
                 DataTable dt = new DataTable();
                 da.Fill(dt);
+
                 dgvBook_bookmag.DataSource = dt;
             }
         }
 
         private void btnAdd_bookmag_Click(object sender, EventArgs e)
         {
-            if (txtTitle_bookmag.Text == "" || txtAuthor_bookmag.Text == "" || txtStock_bookmag.Text == "")
+            // validasi input tidak boleh kosong
+            if (txtTitle_bookmag.Text == "" ||
+                txtAuthor_bookmag.Text == "" ||
+                txtStock_bookmag.Text == "")
             {
                 MessageBox.Show("Lengkapi semua data");
                 return;
             }
 
+            // simpan data buku baru ke database
             using (MySqlConnection conn = Database.GetConnection())
             {
                 conn.Open();
@@ -53,18 +60,20 @@ namespace library_sertif.forms
             }
 
             MessageBox.Show("Buku berhasil ditambahkan");
-            ClearInput();
-            LoadBooks();
+            ClearInput();   // reset input setelah insert
+            LoadBooks();    // refresh DataGridView
         }
 
         private void btnRemove_bookmag_Click(object sender, EventArgs e)
         {
+            // pastikan ada baris yang dipilih
             if (dgvBook_bookmag.SelectedRows.Count == 0)
             {
                 MessageBox.Show("Pilih buku terlebih dahulu");
                 return;
             }
 
+            // ambil data buku yang dipilih
             int bookId = Convert.ToInt32(
                 dgvBook_bookmag.SelectedRows[0].Cells["id"].Value
             );
@@ -72,6 +81,7 @@ namespace library_sertif.forms
             string title =
                 dgvBook_bookmag.SelectedRows[0].Cells["title"].Value.ToString();
 
+            // konfirmasi penghapusan
             DialogResult confirm = MessageBox.Show(
                 $"Remove \"{title}\"?",
                 "Konfirmasi",
@@ -80,9 +90,11 @@ namespace library_sertif.forms
 
             if (confirm != DialogResult.Yes) return;
 
+            // hapus buku dari database
             using (MySqlConnection conn = Database.GetConnection())
             {
                 conn.Open();
+
                 string query = "DELETE FROM books WHERE id = @id";
                 MySqlCommand cmd = new MySqlCommand(query, conn);
                 cmd.Parameters.AddWithValue("@id", bookId);
@@ -90,11 +102,12 @@ namespace library_sertif.forms
             }
 
             MessageBox.Show("Buku berhasil dihapus");
-            LoadBooks();
+            LoadBooks(); // refresh data setelah delete
         }
 
         private void ClearInput()
         {
+            // bersihkan textbox input
             txtTitle_bookmag.Clear();
             txtAuthor_bookmag.Clear();
             txtStock_bookmag.Clear();
@@ -102,6 +115,7 @@ namespace library_sertif.forms
 
         private void lblBack_bookmag_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            // kembali ke menu admin
             new AdminMenuForm().Show();
             this.Close();
         }

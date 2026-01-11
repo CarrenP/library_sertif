@@ -13,18 +13,20 @@ namespace library_sertif.forms
         {
             InitializeComponent();
             this.Text = "Admin - Borrowed Books";
-            LoadBorrowedBooks();
+            LoadBorrowedBooks(); // load data saat form pertama kali dibuka
         }
 
         private void LoadBorrowedBooks()
         {
+            // ambil koneksi database dari helper Database
             using (MySqlConnection conn = Database.GetConnection())
             {
                 conn.Open();
 
+                // query untuk mengambil data peminjaman + user + buku
                 string query = @"
                     SELECT 
-                         u.member_id,
+                        u.member_id,
                         u.name,
                         b.title,
                         l.loan_date,
@@ -39,6 +41,7 @@ namespace library_sertif.forms
                 MySqlCommand cmd = new MySqlCommand(query, conn);
                 MySqlDataReader reader = cmd.ExecuteReader();
 
+                // DataTable sebagai sumber data DataGridView
                 DataTable table = new DataTable();
                 table.Columns.Add("Member ID");
                 table.Columns.Add("Name");
@@ -48,6 +51,7 @@ namespace library_sertif.forms
 
                 while (reader.Read())
                 {
+                    // cek apakah buku sudah dikembalikan
                     bool isReturned = Convert.ToInt32(reader["is_returned"]) == 1;
 
                     string status;
@@ -58,6 +62,7 @@ namespace library_sertif.forms
                     }
                     else
                     {
+                        // hitung sisa / keterlambatan hari
                         DateTime dueDate = reader.GetDateTime("due_date");
                         int daysLeft = (dueDate.Date - DateTime.Now.Date).Days;
 
@@ -66,6 +71,7 @@ namespace library_sertif.forms
                             : $"Overdue by {Math.Abs(daysLeft)} days";
                     }
 
+                    // masukkan data ke DataTable
                     table.Rows.Add(
                         reader["member_id"],
                         reader["name"],
@@ -75,10 +81,11 @@ namespace library_sertif.forms
                     );
                 }
 
-
+                // tampilkan data ke DataGridView
                 dgvBorrowed.DataSource = table;
             }
 
+            // beri warna khusus untuk status tertentu
             HighlightOverdue();
         }
 
@@ -91,12 +98,14 @@ namespace library_sertif.forms
 
                 string status = row.Cells["Status"].Value.ToString();
 
+                // overdue → merah & bold
                 if (status.Contains("Overdue"))
                 {
                     row.Cells["Status"].Style.ForeColor = Color.Red;
                     row.Cells["Status"].Style.Font =
                         new Font(dgvBorrowed.Font, FontStyle.Bold);
                 }
+                // returned → hijau & italic
                 else if (status == "Returned")
                 {
                     row.Cells["Status"].Style.ForeColor = Color.Green;
@@ -104,11 +113,11 @@ namespace library_sertif.forms
                         new Font(dgvBorrowed.Font, FontStyle.Italic);
                 }
             }
-
         }
 
         private void lblBack_bookborrow_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            // kembali ke menu admin
             new AdminMenuForm().Show();
             this.Close();
         }

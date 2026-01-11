@@ -10,15 +10,16 @@ namespace library_sertif.forms
 {
     public partial class loanlist : Form
     {
-        private int _userId;
+        private int _userId; // ID user yang sedang login
 
         public loanlist(int userId)
         {
             InitializeComponent();
             _userId = userId;
 
+            // register event klik cell DataGridView
             dgvloan_loanlist.CellContentClick += dgvloan_loanlist_CellContentClick;
-            LoadLoans();
+            LoadLoans(); // load data peminjaman user
         }
 
         private void LoadLoans()
@@ -27,6 +28,7 @@ namespace library_sertif.forms
             {
                 conn.Open();
 
+                // ambil data peminjaman user
                 string query = @"
                     SELECT 
                         b.id AS book_id,
@@ -43,6 +45,7 @@ namespace library_sertif.forms
                 cmd.Parameters.AddWithValue("@uid", _userId);
                 MySqlDataReader reader = cmd.ExecuteReader();
 
+                // DataTable untuk ditampilkan di DataGridView
                 DataTable table = new DataTable();
                 table.Columns.Add("BookId");
                 table.Columns.Add("Title");
@@ -57,6 +60,7 @@ namespace library_sertif.forms
                     DateTime dueDate = reader.GetDateTime("due_date");
                     bool isReturned = reader.GetInt32("is_returned") == 1;
 
+                    // tentukan status peminjaman
                     string status;
                     if (isReturned)
                     {
@@ -65,25 +69,25 @@ namespace library_sertif.forms
                     else
                     {
                         int daysLeft = (dueDate.Date - DateTime.Now.Date).Days;
-                        if (daysLeft >= 0)
-                            status = $"Remaining {daysLeft} days";
-                        else
-                            status = $"Overdue by {Math.Abs(daysLeft)} days";
+                        status = daysLeft >= 0
+                            ? $"Remaining {daysLeft} days"
+                            : $"Overdue by {Math.Abs(daysLeft)} days";
                     }
 
                     table.Rows.Add(bookId, title, loanDate.ToShortDateString(), status);
                 }
 
                 dgvloan_loanlist.DataSource = table;
-                dgvloan_loanlist.Columns["BookId"].Visible = false;
+                dgvloan_loanlist.Columns["BookId"].Visible = false; // hide id internal
             }
 
-            AddReturnButton();
-            HighlightOverdue();
+            AddReturnButton();   // tambah tombol return
+            HighlightOverdue();  // highlight buku yang overdue
         }
 
         private void AddReturnButton()
         {
+            // tambah kolom tombol Return jika belum ada
             if (!dgvloan_loanlist.Columns.Contains("btnReturn"))
             {
                 DataGridViewButtonColumn btn = new DataGridViewButtonColumn();
@@ -94,6 +98,7 @@ namespace library_sertif.forms
                 dgvloan_loanlist.Columns.Add(btn);
             }
 
+            // disable tombol jika buku sudah dikembalikan
             foreach (DataGridViewRow row in dgvloan_loanlist.Rows)
             {
                 if (row.Cells["Status"].Value?.ToString() == "Returned")
@@ -107,6 +112,7 @@ namespace library_sertif.forms
 
         private void HighlightOverdue()
         {
+            // beri warna merah untuk buku yang overdue
             foreach (DataGridViewRow row in dgvloan_loanlist.Rows)
             {
                 if (row.Cells["Status"].Value == null) continue;
@@ -125,11 +131,13 @@ namespace library_sertif.forms
         {
             if (e.RowIndex < 0) return;
 
+            // handle klik tombol Return
             if (dgvloan_loanlist.Columns[e.ColumnIndex].Name == "btnReturn")
             {
                 string status = dgvloan_loanlist.Rows[e.RowIndex]
                                 .Cells["Status"].Value.ToString();
 
+                // jika sudah returned, abaikan
                 if (status == "Returned") return;
 
                 int bookId = Convert.ToInt32(
@@ -145,7 +153,7 @@ namespace library_sertif.forms
                 if (confirm == DialogResult.Yes)
                 {
                     ReturnBook(bookId);
-                    LoadLoans();
+                    LoadLoans(); // refresh data setelah return
                 }
             }
         }
@@ -156,6 +164,7 @@ namespace library_sertif.forms
             {
                 conn.Open();
 
+                // update status peminjaman dan kembalikan stok buku
                 string sql = @"
                     UPDATE loans
                     SET is_returned = 1,
@@ -180,6 +189,7 @@ namespace library_sertif.forms
 
         private void lblBack_loanlist_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
+            // kembali ke menu user
             new UserMenuForm(_userId).Show();
             this.Close();
         }
